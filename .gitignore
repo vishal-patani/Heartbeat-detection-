@@ -2,6 +2,10 @@
 #######
 *.wpr
 *.wpu
+.gradio
+*.csv
+*.venv
+
 
 # log files #
 #######

@@ -4,9 +4,10 @@ import cv2
 import pylab
 import os
 import sys
+from typing import List, Tuple, Optional, Union, Any
 
 
-def resource_path(relative_path):
+def resource_path(relative_path: str) -> str:
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
@@ -17,25 +18,27 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-class findFaceGetPulse(object):
+class findFaceGetPulse:
 
-    def __init__(self, bpm_limits=[], data_spike_limit=250,
-                 face_detector_smoothness=10):
-
+    def __init__(self, bpm_limits: List[int] = None, data_spike_limit: float = 250,
+                 face_detector_smoothness: float = 10):
+        if bpm_limits is None:
+            bpm_limits = []
+            
         self.frame_in = np.zeros((10, 10))
         self.frame_out = np.zeros((10, 10))
         self.fps = 0
         self.buffer_size = 250
         #self.window = np.hamming(self.buffer_size)
-        self.data_buffer = []
-        self.times = []
-        self.ttimes = []
-        self.samples = []
-        self.freqs = []
-        self.fft = []
-        self.slices = [[0]]
+        self.data_buffer: List[float] = []
+        self.times: List[float] = []
+        self.ttimes: List[float] = []
+        self.samples: List[float] = []
+        self.freqs: np.ndarray = np.array([])
+        self.fft: np.ndarray = np.array([])
+        self.slices: List[List[Any]] = [[0]]
         self.t0 = time.time()
-        self.bpms = []
+        self.bpms: List[float] = []
         self.bpm = 0
         dpath = resource_path("haarcascade_frontalface_alt.xml")
         if not os.path.exists(dpath):
@@ -47,18 +50,19 @@ class findFaceGetPulse(object):
         self.last_wh = np.array([0, 0])
         self.output_dim = 13
         self.trained = False
+        self.pcadata = None  # Added to avoid reference before assignment
 
         self.idx = 1
         self.find_faces = True
 
-    def find_faces_toggle(self):
+    def find_faces_toggle(self) -> bool:
         self.find_faces = not self.find_faces
         return self.find_faces
 
-    def get_faces(self):
+    def get_faces(self) -> None:
         return
 
-    def shift(self, detected):
+    def shift(self, detected: List[int]) -> float:
         x, y, w, h = detected
         center = np.array([x + 0.5 * w, y + 0.5 * h])
         shift = np.linalg.norm(center - self.last_center)
@@ -66,18 +70,18 @@ class findFaceGetPulse(object):
         self.last_center = center
         return shift
 
-    def draw_rect(self, rect, col=(0, 255, 0)):
+    def draw_rect(self, rect: List[int], col: Tuple[int, int, int] = (0, 255, 0)) -> None:
         x, y, w, h = rect
         cv2.rectangle(self.frame_out, (x, y), (x + w, y + h), col, 1)
 
-    def get_subface_coord(self, fh_x, fh_y, fh_w, fh_h):
+    def get_subface_coord(self, fh_x: float, fh_y: float, fh_w: float, fh_h: float) -> List[int]:
         x, y, w, h = self.face_rect
         return [int(x + w * fh_x - (w * fh_w / 2.0)),
                 int(y + h * fh_y - (h * fh_h / 2.0)),
                 int(w * fh_w),
                 int(h * fh_h)]
 
-    def get_subface_means(self, coord):
+    def get_subface_means(self, coord: List[int]) -> float:
         x, y, w, h = coord
         subframe = self.frame_in[y:y + h, x:x + w, :]
         v1 = np.mean(subframe[:, :, 0])
@@ -86,11 +90,11 @@ class findFaceGetPulse(object):
 
         return (v1 + v2 + v3) / 3.
 
-    def train(self):
+    def train(self) -> bool:
         self.trained = not self.trained
         return self.trained
 
-    def plot(self):
+    def plot(self) -> None:
         data = np.array(self.data_buffer).T
         np.savetxt("data.dat", data)
         np.savetxt("times.dat", self.times)
@@ -98,39 +102,57 @@ class findFaceGetPulse(object):
         idx = np.where((freqs > 50) & (freqs < 180))
         pylab.figure()
         n = data.shape[0]
-        for k in xrange(n):
+        for k in range(n):
             pylab.subplot(n, 1, k + 1)
             pylab.plot(self.times, data[k])
         pylab.savefig("data.png")
         pylab.figure()
-        for k in xrange(self.output_dim):
+        for k in range(self.output_dim):
             pylab.subplot(self.output_dim, 1, k + 1)
             pylab.plot(self.times, self.pcadata[k])
         pylab.savefig("data_pca.png")
 
         pylab.figure()
-        for k in xrange(self.output_dim):
+        for k in range(self.output_dim):
             pylab.subplot(self.output_dim, 1, k + 1)
             pylab.plot(freqs[idx], self.fft[k][idx])
         pylab.savefig("data_fft.png")
         quit()
 
-    def run(self, cam):
+    def run(self, cam: int) -> None:
         self.times.append(time.time() - self.t0)
         self.frame_out = self.frame_in
         self.gray = cv2.equalizeHist(cv2.cvtColor(self.frame_in,
                                                   cv2.COLOR_BGR2GRAY))
-        col = (100, 255, 100)
+
+        # Helper function to draw text with outline
+        def draw_text_with_outline(img, text, pos, font, scale, text_color, outline_color, text_thickness=1, outline_thickness=3, line_type=cv2.LINE_AA):
+            x, y = pos
+            # Draw outline by drawing text multiple times with offset
+            cv2.putText(img, text, (x - 1, y - 1), font, scale, outline_color, outline_thickness, line_type)
+            cv2.putText(img, text, (x + 1, y - 1), font, scale, outline_color, outline_thickness, line_type)
+            cv2.putText(img, text, (x - 1, y + 1), font, scale, outline_color, outline_thickness, line_type)
+            cv2.putText(img, text, (x + 1, y + 1), font, scale, outline_color, outline_thickness, line_type)
+            # Draw the main text on top
+            cv2.putText(img, text, (x, y), font, scale, text_color, text_thickness, line_type)
+
+        text_color = (255, 255, 255) # White
+        outline_color = (0, 0, 0) # Black
+        font = cv2.FONT_HERSHEY_SIMPLEX # Changed font for better scaling
+        font_scale_controls = 0.6 # Increased scale
+        font_scale_status = 0.8 # Larger scale for status
+        text_thickness = 1
+        outline_thickness = 2 # Outline thickness
+
         if self.find_faces:
-            cv2.putText(
-                self.frame_out, "Press 'C' to change camera (current: %s)" % str(
-                    cam),
-                (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
-            cv2.putText(
+            draw_text_with_outline(
+                self.frame_out, f"Press 'C' to change camera (current: {cam})",
+                (10, 30), font, font_scale_controls, text_color, outline_color, text_thickness, outline_thickness)
+            draw_text_with_outline(
                 self.frame_out, "Press 'S' to lock face and begin",
-                       (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
-            cv2.putText(self.frame_out, "Press 'Esc' to quit",
-                       (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
+                       (10, 55), font, font_scale_controls, text_color, outline_color, text_thickness, outline_thickness)
+            draw_text_with_outline(self.frame_out, "Press 'Esc' to quit",
+                       (10, 80), font, font_scale_controls, text_color, outline_color, text_thickness, outline_thickness)
             self.data_buffer, self.times, self.trained = [], [], False
             detected = list(self.face_cascade.detectMultiScale(self.gray,
                                                                scaleFactor=1.3,
@@ -145,28 +167,27 @@ class findFaceGetPulse(object):
                 if self.shift(detected[-1]) > 10:
                     self.face_rect = detected[-1]
             forehead1 = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
-            self.draw_rect(self.face_rect, col=(255, 0, 0))
+            self.draw_rect(self.face_rect, col=(255, 0, 0)) # Keep face rect blue
             x, y, w, h = self.face_rect
-            cv2.putText(self.frame_out, "Face",
-                       (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
-            self.draw_rect(forehead1)
+            # cv2.putText(self.frame_out, "Face", (x, y), font, 1.5, (255, 0, 0)) # Optional: Label face
+            self.draw_rect(forehead1) # Keep forehead rect green (default)
             x, y, w, h = forehead1
-            cv2.putText(self.frame_out, "Forehead",
-                       (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+            # cv2.putText(self.frame_out, "Forehead", (x, y), font, 1.5, (0, 255, 0)) # Optional: Label forehead
             return
         if set(self.face_rect) == set([1, 1, 2, 2]):
             return
-        cv2.putText(
-            self.frame_out, "Press 'C' to change camera (current: %s)" % str(
-                cam),
-            (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
-        cv2.putText(
+
+        # Draw controls text when face is locked
+        draw_text_with_outline(
+            self.frame_out, f"Press 'C' to change camera (current: {cam})",
+            (10, 30), font, font_scale_controls, text_color, outline_color, text_thickness, outline_thickness)
+        draw_text_with_outline(
             self.frame_out, "Press 'S' to restart",
-                   (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
-        cv2.putText(self.frame_out, "Press 'D' to toggle data plot",
-                   (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
-        cv2.putText(self.frame_out, "Press 'Esc' to quit",
-                   (10, 100), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+                   (10, 55), font, font_scale_controls, text_color, outline_color, text_thickness, outline_thickness)
+        draw_text_with_outline(self.frame_out, "Press 'D' to toggle data plot",
+                   (10, 80), font, font_scale_controls, text_color, outline_color, text_thickness, outline_thickness)
+        draw_text_with_outline(self.frame_out, "Press 'Esc' to quit",
+                   (10, 105), font, font_scale_controls, text_color, outline_color, text_thickness, outline_thickness)
 
         forehead1 = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
         self.draw_rect(forehead1)
@@ -193,7 +214,7 @@ class findFaceGetPulse(object):
             raw = np.fft.rfft(interpolated)
             phase = np.angle(raw)
             self.fft = np.abs(raw)
-            self.freqs = float(self.fps) / L * np.arange(L / 2 + 1)
+            self.freqs = float(self.fps) / L * np.arange(L // 2 + 1)
 
             freqs = 60. * self.freqs
             idx = np.where((freqs > 50) & (freqs < 180))
@@ -204,14 +225,23 @@ class findFaceGetPulse(object):
             pfreq = freqs[idx]
             self.freqs = pfreq
             self.fft = pruned
-            idx2 = np.argmax(pruned)
 
-            t = (np.sin(phase[idx2]) + 1.) / 2.
-            t = 0.9 * t + 0.1
+            # Check if pruned array is empty before finding argmax
+            if pruned.size > 0:
+                idx2 = np.argmax(pruned)
+                self.bpm = self.freqs[idx2] # Calculate bpm only if idx2 is valid
+                
+                # Calculate phase-related blending only if we have a valid peak
+                t = (np.sin(phase[idx2]) + 1.) / 2.
+                t = 0.9 * t + 0.1
+            else:
+                # Handle case where no peak is found in the range (e.g., keep previous bpm or set to 0)
+                # self.bpm = 0 # Option: Reset bpm if no peak found
+                t = 0.5 # Default blending if no peak found
+                
             alpha = t
             beta = 1 - t
 
-            self.bpm = self.freqs[idx2]
             self.idx += 1
 
             x, y, w, h = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
@@ -230,9 +260,9 @@ class findFaceGetPulse(object):
             # self.bpms.append(bpm)
             # self.ttimes.append(time.time())
             if gap:
-                text = "(estimate: %0.1f bpm, wait %0.0f s)" % (self.bpm, gap)
+                text = f"(estimate: {self.bpm:.1f} bpm, wait {gap:.0f} s)"
             else:
-                text = "(estimate: %0.1f bpm)" % (self.bpm)
-            tsize = 1
-            cv2.putText(self.frame_out, text,
-                       (int(x - w / 2), int(y)), cv2.FONT_HERSHEY_PLAIN, tsize, col)
+                text = f"{self.bpm:.1f} BPM" # Changed text slightly
+            # Draw BPM estimate with outline
+            draw_text_with_outline(self.frame_out, text,
+                       (int(x - w / 2), int(y)), font, font_scale_status, text_color, outline_color, text_thickness, outline_thickness)
