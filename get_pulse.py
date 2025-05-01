@@ -118,8 +118,8 @@ class getPulseApp:
                 self.toggle_search()
             self.bpm_plot = True
             self.make_bpm_plot()
-            # Position plot window to the right of the main window
-            moveWindow(self.plot_title, self.w + 10, 0) 
+            # Position plot window near the top-left corner of the screen
+            moveWindow(self.plot_title, 10, 10) 
 
     def make_bpm_plot(self) -> None:
         """
