@@ -33,7 +33,7 @@ The overall dataflow/execution order for the real-time signal processing looks l
 
 Quickstart:
 ------------
-
+- run `pip install -r requirements.txt`
 - run get_pulse.py to start the application
 
 ```
