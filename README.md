@@ -40,16 +40,6 @@ Quickstart:
 python get_pulse.py
 ```
 
-- To run on an IP camera, set the `url`, `user`, and `password` strings on line 134 of `get_pulse_ipcam.py`, then run:
-
-```
-python get_pulse_ipcam.py
-```
-This was tested on a Wowwee Rovio.
-
-- If there is an error, try running `test_webcam.py` in the same directory to check if your openCV installation and webcam can be made to work
-with this application.
-
 Usage notes:
 ----------
 - When run, a window will open showing a stream from your computer's webcam
@@ -66,5 +56,5 @@ be released by pressing "S" again.
 isolated in about 15 to 20 seconds. A count-down is shown in the image frame.
 - If a large spike in optical intensity is measured in the data (due to motion 
 noise, sudden change in lighting, etc) the data collection process is reset and 
-started over. The sensitivity of this feature can be tweaked by changing `data_spike_limit` on line 31 of [get_pulse.py](get_pulse.py).
+started over. The sensitivity of this feature can be tweaked by changing `data_spike_limit` in [get_pulse.py](get_pulse.py).
 Other mutable parameters of the analysis can be changed here as well.

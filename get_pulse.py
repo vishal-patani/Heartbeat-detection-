@@ -5,8 +5,7 @@ from cv2 import moveWindow
 import argparse
 import numpy as np
 import datetime
-# TODO: work on serial port comms, if anyone asks for it
-# from serial import Serial
+# Serial port code removed
 import socket
 import sys
 from typing import Dict, List, Tuple, Optional, Any, Callable, Union
@@ -23,21 +22,8 @@ class getPulseApp:
     def __init__(self, args: argparse.Namespace):
         # Imaging device - must be a connected camera (not an ip camera or mjpeg
         # stream)
-        serial = args.serial
-        baud = args.baud
-        self.send_serial = False
+        # Serial port code removed
         self.send_udp = False
-        
-        # Setup serial communication if requested
-        if serial:
-            self.send_serial = True
-            if not baud:
-                baud = 9600
-            else:
-                baud = int(baud)
-            # Uncomment when serial is needed
-            # from serial import Serial
-            # self.serial = Serial(port=serial, baudrate=baud)
 
         # Setup UDP communication if requested
         udp = args.udp
@@ -163,10 +149,7 @@ class getPulseApp:
             print("Exiting")
             for cam in self.cameras:
                 cam.cam.release()
-            if self.send_serial:
-                # Uncomment when serial is needed
-                # self.serial.close()
-                pass
+            # Serial port code removed
             sys.exit()
 
         for key in self.key_controls.keys():
@@ -197,11 +180,7 @@ class getPulseApp:
         if self.bpm_plot:
             self.make_bpm_plot()
 
-        # Send data via serial if enabled
-        if self.send_serial:
-            # Uncomment when serial is needed
-            # self.serial.write(f"{self.processor.bpm}\r\n".encode('utf-8'))
-            pass
+        # Serial port code removed
 
         # Send data via UDP if enabled
         if self.send_udp:
@@ -212,10 +191,7 @@ class getPulseApp:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Webcam pulse detector.')
-    parser.add_argument('--serial', default=None,
-                       help='serial port destination for bpm data')
-    parser.add_argument('--baud', default=None,
-                       help='Baud rate for serial transmission')
+    # Serial port arguments removed
     parser.add_argument('--udp', default=None,
                        help='udp address:port destination for bpm data')
 
