@@ -1,4 +1,5 @@
-![Alt text](http://i.imgur.com/2ngZopS.jpg "Screenshot")
+<img width="802" height="377" alt="vishal" src="https://github.com/user-attachments/assets/c473bfb6-aa20-4f39-8cc3-e5b12dcf6fa6" />
+
 
 webcam-pulse-detector
 -----------------------
