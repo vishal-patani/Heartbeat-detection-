@@ -58,4 +58,20 @@ isolated in about 15 to 20 seconds. A count-down is shown in the image frame.
 noise, sudden change in lighting, etc) the data collection process is reset and 
 started over. The sensitivity of this feature can be tweaked by changing `data_spike_limit` in [get_pulse.py](get_pulse.py).
 Other mutable parameters of the analysis can be changed here as well.
-# Heartbeat-detection-
+
+# Heartbeat Detection
+
+A real-time heart rate monitoring system using webcam-based photoplethysmography (PPG).
+
+![Heartbeat Detection Demo](docs/images/heartbeat-demo.png)
+*Real-time heartbeat detection showing BPM measurement and signal visualization*
+
+## Features
+
+- Real-time heart rate detection using webcam
+- Face detection and tracking
+- Forehead region isolation for measurement
+- Real-time data visualization with signal plotting
+- CSV export functionality
+- UDP streaming support
+- Multi-camera support
